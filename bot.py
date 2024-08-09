@@ -9,7 +9,6 @@ from config import BOT_TOKEN, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DATABAS
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Establishing a connection to PostgreSQL
 conn = psycopg2.connect(
     dbname=POSTGRES_DATABASE,
     user=POSTGRES_USER,
@@ -19,7 +18,6 @@ conn = psycopg2.connect(
 )
 cur = conn.cursor()
 
-# Connecting to Redis
 redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
 
@@ -59,7 +57,6 @@ def handle_contact(message):
     first_name = contact.first_name
     last_name = contact.last_name
 
-    # Check if the user already has a code in Redis
     existing_data = redis_client.get(chat_id)
     if existing_data is not None:
         existing_data = json.loads(existing_data)
@@ -74,17 +71,14 @@ def handle_contact(message):
         )
         return
 
-    # Normalize phone number
     if phone_number[0] != "+":
         phone_number = "+" + phone_number
 
-    # Query to fetch the user id if the phone number exists
     cur.execute("SELECT id FROM students WHERE phone_number = %s", (phone_number,))
     user_record = cur.fetchone()
 
     if user_record:
         user_id = user_record[0]
-        # Update the user's name based on the user_id
         if last_name is not None:
             cur.execute(
                 "UPDATE students SET full_name = %s WHERE id = %s",
@@ -97,7 +91,6 @@ def handle_contact(message):
             )
         conn.commit()
     else:
-        # Insert new user if they don't exist
         if last_name is not None:
             cur.execute(
                 "INSERT INTO students (full_name, phone_number) VALUES (%s, %s) RETURNING id;",
@@ -111,7 +104,6 @@ def handle_contact(message):
         user_id = cur.fetchone()[0]
         conn.commit()
 
-    # Generate and store the code in Redis
     code = generate_code()
     data = {'user_id': user_id, 'code': code}
     redis_client.setex(chat_id, 600, json.dumps(data))  # Store for 10 minutes
@@ -133,13 +125,11 @@ def handle_contact(message):
 def handle_renew(call):
     chat_id, user_id = map(int, call.data.split('_')[1:])
 
-    # Check if the user already has a code in Redis
     existing_data = redis_client.get(chat_id)
     if existing_data is not None:
         bot.send_message(call.message.chat.id, "Eski kodingiz hali ham kuchda ☝️")
         return
 
-    # Generate and store a new code in Redis
     new_code = generate_code()
     new_data = {'user_id': user_id, 'code': new_code}
     redis_client.setex(chat_id, 600, json.dumps(new_data))  # Store for 10 minutes
