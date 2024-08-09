@@ -22,7 +22,7 @@ redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=Tr
 
 
 def generate_code():
-    return random.randint(10000000, 99999999)
+    return random.randint(10000, 99999)  # Generate a 5-digit code
 
 
 @bot.message_handler(commands=['start'])
@@ -61,35 +61,55 @@ def handle_contact(message):
     if existing_data is not None:
         existing_data = json.loads(existing_data)
         existing_code = existing_data.get("code")
-
         bot.send_message(
             chat_id,
             text=f"""
         Eski kodingiz hali ham kuchda ☝️
-<code>{existing_code}</code>
+        <code>{existing_code}</code>
         """,
             parse_mode='HTML'
         )
         return
-    if last_name is not None:
-        cur.execute(
-            "INSERT INTO students (full_name, phone_number) VALUES (%s, %s) RETURNING id;",
-            (first_name + " " + last_name, phone_number)
-        )
+
+    if phone_number[0] != "+":
+        phone_number = "+" + phone_number
+
+    cur.execute("SELECT id FROM students WHERE phone_number = %s", (phone_number,))
+    user_record = cur.fetchone()
+
+    if user_record:
+        user_id = user_record[0]
+        if last_name is not None:
+            cur.execute(
+                "UPDATE students SET full_name = %s WHERE id = %s",
+                (f"{first_name} {last_name}", user_id)
+            )
+        else:
+            cur.execute(
+                "UPDATE students SET full_name = %s WHERE id = %s",
+                (first_name, user_id)
+            )
+        conn.commit()
     else:
-        cur.execute(
-            "INSERT INTO students (full_name, phone_number) VALUES (%s, %s) RETURNING id;",
-            (first_name, phone_number)
-        )
-    user_id = cur.fetchone()[0]
-    conn.commit()
+        if last_name is not None:
+            cur.execute(
+                "INSERT INTO students (full_name, phone_number) VALUES (%s, %s) RETURNING id;",
+                (f"{first_name} {last_name}", phone_number)
+            )
+        else:
+            cur.execute(
+                "INSERT INTO students (full_name, phone_number) VALUES (%s, %s) RETURNING id;",
+                (first_name, phone_number)
+            )
+        user_id = cur.fetchone()[0]
+        conn.commit()
 
     code = generate_code()
     data = {'user_id': user_id, 'code': code}
-    redis_client.setex(chat_id, 3600, json.dumps(data))
+    redis_client.setex(chat_id, 10, json.dumps(data))
 
     markup = InlineKeyboardMarkup()
-    renew_button = InlineKeyboardButton('🔄 Yangilash / Renew', callback_data=f'renew_{chat_id}')
+    renew_button = InlineKeyboardButton('🔄 Yangilash / Renew', callback_data=f'renew_{chat_id}_{user_id}')
     markup.add(renew_button)
 
     bot.send_message(
@@ -102,16 +122,16 @@ def handle_contact(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('renew_'))
 def handle_renew(call):
-    chat_id = int(call.data.split('_')[1])
+    chat_id, user_id = map(int, call.data.split('_')[1:])
 
-    data = redis_client.get(chat_id)
-    if data is not None:
+    existing_data = redis_client.get(chat_id)
+    if existing_data is not None:
         bot.send_message(call.message.chat.id, "Eski kodingiz hali ham kuchda ☝️")
         return
 
     new_code = generate_code()
-    new_data = {'user_id': data['user_id'], 'code': new_code}
-    redis_client.setex(chat_id, 3600, json.dumps(new_data))
+    new_data = {'user_id': user_id, 'code': new_code}
+    redis_client.setex(chat_id, 10, json.dumps(new_data))
 
     bot.edit_message_text(
         chat_id=call.message.chat.id,
