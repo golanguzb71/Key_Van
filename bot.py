@@ -2,10 +2,10 @@ import telebot
 import psycopg2
 import redis
 import random
-import json
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
-from config import BOT_TOKEN, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DATABASE, POSTGRES_HOST, POSTGRES_PORT, \
+from config.config import BOT_TOKEN, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DATABASE, POSTGRES_HOST, POSTGRES_PORT, \
     REDIS_HOST, REDIS_PORT
+from utils.utils import find_key_by_value
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -22,7 +22,7 @@ redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=Tr
 
 
 def generate_code():
-    return random.randint(10000, 99999)  # Generate a 5-digit code
+    return random.randint(10000, 99999)
 
 
 @bot.message_handler(commands=['start'])
@@ -57,15 +57,14 @@ def handle_contact(message):
     first_name = contact.first_name
     last_name = contact.last_name
 
-    existing_data = redis_client.get(chat_id)
+    # existing_data = redis_client.get(chat_id)
+    existing_data = find_key_by_value(redis_client, chat_id)
     if existing_data is not None:
-        existing_data = json.loads(existing_data)
-        existing_code = existing_data.get("code")
         bot.send_message(
             chat_id,
             text=f"""
         Eski kodingiz hali ham kuchda ☝️
-        <code>{existing_code}</code>
+        <code>{existing_data}</code>
         """,
             parse_mode='HTML'
         )
@@ -74,43 +73,41 @@ def handle_contact(message):
     if phone_number[0] != "+":
         phone_number = "+" + phone_number
 
-    cur.execute("SELECT id FROM students WHERE phone_number = %s", (phone_number,))
+    cur.execute("SELECT id FROM users WHERE phone_number = %s", (phone_number,))
     user_record = cur.fetchone()
 
     if user_record:
         user_id = user_record[0]
         if last_name is not None:
             cur.execute(
-                "UPDATE students SET full_name = %s WHERE id = %s",
+                "UPDATE users SET full_name = %s WHERE id = %s",
                 (f"{first_name} {last_name}", user_id)
             )
         else:
             cur.execute(
-                "UPDATE students SET full_name = %s WHERE id = %s",
+                "UPDATE users SET full_name = %s WHERE id = %s",
                 (first_name, user_id)
             )
         conn.commit()
     else:
         if last_name is not None:
             cur.execute(
-                "INSERT INTO students (full_name, phone_number) VALUES (%s, %s) RETURNING id;",
-                (f"{first_name} {last_name}", phone_number)
+                "INSERT INTO users (phone_number, full_name, chat_id) VALUES (%s, %s ,%s);",
+                (phone_number, f"{first_name} {last_name}", chat_id)
             )
         else:
             cur.execute(
-                "INSERT INTO students (full_name, phone_number) VALUES (%s, %s) RETURNING id;",
-                (first_name, phone_number)
+                "INSERT INTO users (full_name, phone_number , chat_id) VALUES (%s, %s , %s);",
+                (first_name, phone_number, chat_id)
             )
-        user_id = cur.fetchone()[0]
         conn.commit()
-
     code = generate_code()
-    data = {'user_id': user_id, 'code': code}
-    redis_client.setex(chat_id, 600, json.dumps(data))  # Store for 10 minutes
+    # data = {'user_id': user_id, 'code': code}
+    # redis_client.setex(chat_id, 600, json.dumps(data))
+    redis_client.setex(code, 300, chat_id)
 
-    # Create markup for the renew button
     markup = InlineKeyboardMarkup()
-    renew_button = InlineKeyboardButton('🔄 Yangilash / Renew', callback_data=f'renew_{chat_id}_{user_id}')
+    renew_button = InlineKeyboardButton('🔄 Yangilash / Renew', callback_data=f'renew_{code}_{chat_id}')
     markup.add(renew_button)
 
     bot.send_message(
@@ -123,17 +120,16 @@ def handle_contact(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('renew_'))
 def handle_renew(call):
-    chat_id, user_id = map(int, call.data.split('_')[1:])
-
-    existing_data = redis_client.get(chat_id)
+    code, chat_id = map(int, call.data.split('_')[1:])
+    existing_data = redis_client.get(code)
     if existing_data is not None:
         bot.send_message(call.message.chat.id, "Eski kodingiz hali ham kuchda ☝️")
         return
 
     new_code = generate_code()
-    new_data = {'user_id': user_id, 'code': new_code}
-    redis_client.setex(chat_id, 600, json.dumps(new_data))  # Store for 10 minutes
-
+    # new_data = {'user_id': user_id, 'code': new_code}
+    # redis_client.setex(chat_id, 600, json.dumps(new_data))  # Store for 10 minutes
+    redis_client.setex(code, 300, chat_id)
     bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
