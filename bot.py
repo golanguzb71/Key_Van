@@ -36,15 +36,13 @@ def send_welcome(message):
     welcome_message = f"""
 🇺🇿
 Salom {name} 👋
-Camelotning rasmiy botiga xush kelibsiz
-
-⬇️ Kontaktingizni yuboring (tugmani bosib)
+CodeVan servicega xush kelibsiz
+⬇️ Kontaktingizni yuboring va 10 daqiqalik kalitingizni oling!
 
 🇺🇸
 Hi {name} 👋
-Welcome to Camelot's official bot
-
-⬇️ Send your contact (by clicking button)
+Welcome to CodeVan service
+⬇️ Send your contact and get 10 minutes key!
 """
     bot.send_message(message.chat.id, welcome_message, reply_markup=markup)
 
