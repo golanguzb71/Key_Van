@@ -5,9 +5,6 @@ from helpers.helpers import bot, handle_contact_helper, send_welcome_helper, han
 from utils.utils import process_doc
 
 app = Flask(__name__)
-UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 
 @app.route('/getTestTextFile', methods=['POST'])
 def upload_file():
