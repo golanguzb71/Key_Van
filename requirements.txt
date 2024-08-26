@@ -2,3 +2,7 @@ pytelegrambotapi~=4.22.1
 python-dotenv~=1.0.1
 psycopg2-binary~=2.9.9
 redis~=5.0.8
+PyPDF2~=3.0.1
+docx~=0.2.4
+python-docx~=1.1.2
+Flask~=3.0.3
