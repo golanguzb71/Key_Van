@@ -12,5 +12,3 @@ POSTGRES_PORT = os.getenv('POSTGRES_PORT')
 
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = os.getenv('REDIS_PORT')
-
-CAMELOT_ADMIN = os.getenv("CAMELOT_ADMIN")

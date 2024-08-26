@@ -1,19 +1,17 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from config.config import BOT_TOKEN, CAMELOT_ADMIN
+from config.config import BOT_TOKEN
 from database.postgres import cur, conn
 from database.redisClient import redis_client
-from helpers.extraHelpers import send_welcome_users, send_welcome_admin
+from helpers.extraHelpers import send_welcome_users
 from utils.utils import find_key_by_value, generate_code
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
 
 def send_welcome_helper(message):
-    if message.chat.id == float(CAMELOT_ADMIN):
-        send_welcome_admin(message, bot)
-    else:
+
         send_welcome_users(message, bot)
 
 
