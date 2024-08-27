@@ -11,8 +11,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 
 def send_welcome_helper(message):
-
-        send_welcome_users(message, bot)
+    send_welcome_users(message, bot)
 
 
 def handle_contact_helper(message):
@@ -69,7 +68,7 @@ def handle_contact_helper(message):
     code = generate_code()
     # database = {'user_id': user_id, 'code': code}
     # redis_client.setex(chat_id, 600, json.dumps(database))
-    redis_client.setex(code, 300, chat_id)
+    redis_client.setex(code, 600, chat_id)
 
     markup = InlineKeyboardMarkup()
     renew_button = InlineKeyboardButton('🔄 Yangilash / Renew', callback_data=f'renew_{code}_{chat_id}')
@@ -87,13 +86,13 @@ def handle_renew_helper(call):
     code, chat_id = map(int, call.data.split('_')[1:])
     existing_data = redis_client.get(code)
     if existing_data is not None:
-        bot.send_message(call.message.chat.id, "Eski kodingiz hali ham kuchda ☝️")
+        bot.send_message(call.message.chat.id, f"Eski kodingiz hali ham kuchda ☝️ {existing_data}")
         return
 
     new_code = generate_code()
     # new_data = {'user_id': user_id, 'code': new_code}
     # redis_client.setex(chat_id, 600, json.dumps(new_data))  # Store for 10 minutes
-    redis_client.setex(code, 300, chat_id)
+    redis_client.setex(new_code, 600, chat_id)
     bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
