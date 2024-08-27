@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify
-import os
 import threading
+
+from flask import Flask, request, jsonify
+
 from helpers.helpers import bot, handle_contact_helper, send_welcome_helper, handle_renew_helper
 from utils.utils import process_doc
 
