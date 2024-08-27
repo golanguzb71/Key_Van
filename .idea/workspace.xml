@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="52ff6b7b-0870-4c9a-b2b7-f6206cd2d874" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/keyVanBot.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/keyVanBot.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/helpers.py" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/helpers.py" afterDir="false" />
-    </list>
+    <list default="true" id="52ff6b7b-0870-4c9a-b2b7-f6206cd2d874" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -111,7 +106,7 @@
       <workItem from="1724642560909" duration="9851000" />
       <workItem from="1724665836662" duration="4209000" />
       <workItem from="1724671855643" duration="156000" />
-      <workItem from="1724735445093" duration="449000" />
+      <workItem from="1724735445093" duration="774000" />
     </task>
     <servers />
   </component>
