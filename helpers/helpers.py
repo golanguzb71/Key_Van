@@ -86,7 +86,7 @@ def handle_renew_helper(call):
     code, chat_id = map(int, call.data.split('_')[1:])
     existing_data = redis_client.get(code)
     if existing_data is not None:
-        bot.send_message(call.message.chat.id, f"Eski kodingiz hali ham kuchda ☝️ {existing_data}")
+        bot.send_message(call.message.chat.id, f"Eski kodingiz hali ham kuchda ☝️ {code}")
         return
 
     new_code = generate_code()
